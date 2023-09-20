@@ -1,0 +1,144 @@
+TASK 4: STATIC (NOT DHCP) IP ADDRESS FOR P1,P2
+
+p1:
+config t
+int e0/0
+ no ip add dhcp
+ ip add 10.2.1.101 255.255.255.0
+ no shut
+p2:
+config t
+int e1/0
+ no ip add dhcp
+ ip add 10.2.1.201 255.255.255.0
+ no shut
+
+
+TASK 5: STATIC ROUTING ON P1 WITH FLOATING
+!!!ISAHAN
+p1:
+conf t
+ip route 10.2.2.0 255.255.255.0 10.2.1.1 1 
+ip route 10.2.2.0 255.255.255.0 10.2.1.2 10
+!
+ip route 192.168.1.128 255.255.255.224 10.2.1.1 1
+ip route 192.168.1.128 255.255.255.224 10.2.1.2 10
+
+!!!DEFAULT ROUTE/LAHATAN/PAKYAWAN
+p2:
+conf t
+ip route 0.0.0.0 0.0.0.0 10.2.1.2 1
+ip route 0.0.0.0 0.0.0.0 10.2.1.1 10
+
+
+TASK 6: GIVE A DEFAULT ROUTE FOR P1 ONLY
+p1: 10.2.1.1 pref!, 10.2.1.2 back!
+conf t
+ip route 0.0.0.0 0.0.0.0 10.2.1.1 1
+ip route 0.0.0.0 0.0.0.0 10.2.1.2 5
+
+
+TASK 7: ENHANCED INTERIOR GATEWAY ROUTING PROTOCOL
+CCNP TOPIC, NOT CCNA
+D1:
+config t
+router eigrp 100
+ no auto-summary
+ network 10.1.4.4 0.0.0.3
+ network 10.2.1.0 0.0.0.255
+ network 10.2.2.0 0.0.0.255
+ network 192.168.1.128 0.0.0.31
+end
+
+or NEXUS-like
+
+conf t
+ router eigrp CCNPLEVEL
+ address-family ipv4 unicast autonomous-system 100
+  network 10.1.4.6 0.0.0.0
+  network 10.2.1.1 0.0.0.0
+  network 10.2.2.1 0.0.0.0
+  network 192.168.1.129 0.0.0.0
+  end
+
+!EIGRP ROUTER 4
+config t
+router eigrp 100
+ no auto-summary
+ network 10.1.4.8 0.0.0.3
+ network 10.1.4.4 0.0.0.3
+ end
+
+
+
+R4:
+config t
+Int loopback 0
+ ip add 4.4.4.4 255.255.255.255
+router ospf 1
+router-id 4.4.4.4
+network 4.4.4.4 0.0.0.0 area 34
+network 10.1.1.8 0.0.0.3 area 34
+
+R3:
+config t
+no router ospf 1
+Int loopback 0
+ ip add 3.3.3.3 255.255.255.255
+router ospf 1
+router-id 3.3.3.3
+network 3.3.3.3 0.0.0.0 area 0
+router ospf 1
+network 10.1.1.4 0.0.0.3 area 0
+network 10.1.1.8 0.0.0.3 area 34
+
+R2:
+config t
+no router ospf 1
+Int loopback 0
+ ip add 2.2.2.2 255.255.255.255
+router ospf 1
+router-id 2.2.2.2
+network 2.2.2.2 0.0.0.0 area 0
+router ospf 1
+network 10.1.1.4 0.0.0.3 area 0
+network 10.1.1.0 0.0.0.3 area 12
+
+R1:
+config t
+Int loopback 0
+ ip add 1.1.1.1 255.255.255.255
+router ospf 1
+router-id 1.1.1.1
+network 1.1.1.1 0.0.0.0 area 12
+router ospf 1
+network 10.1.1.0 0.0.0.3 area 12
+
+
+
+TASK 9: ROUTE DISTRIBUTION: Making Friends with Other Races:
+Mix OSPF and EIGRP
+
+R4: sikat: Eigrp and OSPF world:
+config t
+router eigrp 100
+redistribute ospf 1 metric 10000 100 255 1 1500
+ exit
+router ospf 1
+redistribute eigrp 100 subnets
+end
+
+
+
+
+config t
+router bgp 1
+ bgp log-neighbor-changes
+ neighbor 208.8.8.4 remote-as 45
+ neighbor 207.7.7.2 remote-as 2
+ neighbor 209.9.9.3 remote-as 3
+ network 10.1.1.0 mask 255.255.255.252
+ network 207.7.7.0 mask 255.255.255.0
+ network 208.8.8.0 mask 255.255.255.0
+ network 209.9.9.0 mask 255.255.255.0
+end
